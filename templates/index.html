@@ -1,0 +1,217 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migration Assessment Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">M</div>
+            <div>
+                <h2>CloudMigrate</h2>
+                <span>Assessment Platform</span>
+            </div>
+        </div>
+
+        <p class="nav-heading">MENU</p>
+        <nav>
+            <a href="#dashboard" class="nav-link active">▦ Dashboard</a>
+            <a href="#assessment" class="nav-link">＋ New Assessment</a>
+            <a href="#recommendation" class="nav-link">▤ Recommendations</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="status-dot"></div>
+            <div>
+                <strong>Simulator Online</strong>
+                <span>System operational</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content" id="dashboard">
+
+        <header class="topbar">
+            <div>
+                <span class="breadcrumb">Workspace / Dashboard</span>
+                <h2>Migration Dashboard</h2>
+            </div>
+            <div class="top-status">
+                <span class="online-dot"></span>
+                Simulation Ready
+            </div>
+        </header>
+
+        <section class="welcome">
+            <div>
+                <p class="eyebrow">CLOUD MIGRATION WORKSPACE</p>
+                <h1>Welcome to Migration Assessment</h1>
+                <p>Evaluate your application requirements and discover a suitable AWS EC2 instance.</p>
+            </div>
+            <div class="welcome-icon">☁</div>
+        </section>
+
+        <section class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-top">
+                    <span>CPU CORES</span>
+                    <span class="summary-icon blue">▦</span>
+                </div>
+                <h2>{{ request.form.get('cpu', '2') }}</h2>
+                <p>Required vCPU</p>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-top">
+                    <span>MEMORY</span>
+                    <span class="summary-icon purple">▣</span>
+                </div>
+                <h2>{{ request.form.get('ram', '4') }} GB</h2>
+                <p>Required RAM</p>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-top">
+                    <span>STORAGE</span>
+                    <span class="summary-icon green">▤</span>
+                </div>
+                <h2>{{ request.form.get('storage', '30') }} GB</h2>
+                <p>Required storage</p>
+            </div>
+        </section>
+
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+
+        <section class="workspace-grid">
+
+            <div class="panel" id="assessment">
+                <div class="panel-heading">
+                    <div>
+                        <h2>New Assessment</h2>
+                        <p>Enter your application requirements</p>
+                    </div>
+                    <span class="step-label">STEP 01</span>
+                </div>
+
+                <form method="POST" action="/">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cpu">CPU Cores (vCPU)</label>
+                            <input id="cpu" type="number" name="cpu" min="1" max="128"
+                                   value="{{ request.form.get('cpu', '2') }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ram">Memory (GB)</label>
+                            <input id="ram" type="number" name="ram" min="1" max="1024"
+                                   value="{{ request.form.get('ram', '4') }}" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="storage">Storage Requirement (GB)</label>
+                        <input id="storage" type="number" name="storage" min="1"
+                               value="{{ request.form.get('storage', '30') }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="os">Operating System</label>
+                        <select id="os" name="os">
+                            <option value="Linux" {% if request.form.get('os', 'Linux') == 'Linux' %}selected{% endif %}>Linux</option>
+                            <option value="Windows" {% if request.form.get('os') == 'Windows' %}selected{% endif %}>Windows</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="region">AWS Region</label>
+                        <select id="region" name="region">
+                            {% set selected_region = request.form.get('region', 'us-east-1') %}
+                            <option value="us-east-1" {% if selected_region == 'us-east-1' %}selected{% endif %}>US East (N. Virginia)</option>
+                            <option value="us-east-2" {% if selected_region == 'us-east-2' %}selected{% endif %}>US East (Ohio)</option>
+                            <option value="us-west-2" {% if selected_region == 'us-west-2' %}selected{% endif %}>US West (Oregon)</option>
+                            <option value="ap-south-1" {% if selected_region == 'ap-south-1' %}selected{% endif %}>Asia Pacific (Mumbai)</option>
+                            <option value="eu-west-1" {% if selected_region == 'eu-west-1' %}selected{% endif %}>Europe (Ireland)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="submit-button">
+                        Generate Assessment <span>→</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="panel recommendation-panel" id="recommendation">
+                <div class="panel-heading">
+                    <div>
+                        <h2>EC2 Recommendation</h2>
+                        <p>Recommended AWS configuration</p>
+                    </div>
+                    <span class="step-label">STEP 02</span>
+                </div>
+
+                {% if result %}
+                <div class="recommendation-success">
+                    <span class="check-icon">✓</span>
+                    Assessment completed
+                </div>
+
+                <div class="instance-card">
+                    <span class="instance-label">RECOMMENDED INSTANCE</span>
+                    <h1>{{ result.instance.type }}</h1>
+                    <div class="instance-specs">
+                        <span>{{ result.instance.vcpu }} vCPU</span>
+                        <span>{{ result.instance.ram_gb }} GB RAM</span>
+                    </div>
+                </div>
+
+                <div class="price-section">
+                    <p>Estimated hourly cost</p>
+                    <h2>${{ "%.4f"|format(result.hourly|float) }} <small>/ hour</small></h2>
+                    <div class="price-divider"></div>
+                    <p>Estimated monthly cost</p>
+                    <h2>${{ "%.2f"|format(result.monthly|float) }} <small>/ month</small></h2>
+                </div>
+
+                <div class="result-details">
+                    <p><span>Storage requirement</span><strong>{{ result.storage }} GB</strong></p>
+                    <p><span>AWS Region</span><strong>{{ result.region }}</strong></p>
+                    <p><span>Operating System</span><strong>{{ result.os }}</strong></p>
+                </div>
+
+                <div class="source-note">
+                    Price source: {{ result.price_source }}
+                </div>
+
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">☁</div>
+                    <h3>Ready for Assessment</h3>
+                    <p>Submit your application requirements to see your recommended EC2 instance and estimated pricing here.</p>
+                    <div class="empty-status">
+                        <span class="online-dot"></span>
+                        Waiting for input
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+        </section>
+
+        <footer>
+            Migration Assessment Printer <span>•</span> AWS EC2 Assessment
+        </footer>
+
+    </main>
+</div>
+
+</body>
+</html>
